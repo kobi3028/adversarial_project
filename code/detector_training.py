@@ -13,15 +13,18 @@ def main(train_dir_name, label_file_path, adv_dir_name):
     x_labels = np.load(label_file_path)
 
     # Compute Euclidian activation spaces for each layer
-    pca = PCA(n_components=2)
-    pca.fit(f_x_train)
+    pca_array = []
+    for i in range(len(f_x_train[0])):
+        pca = PCA(n_components=100)
+        pca.fit([x[i]for x in f_x_train])
+        pca_array.append(pca)
 
     train_activation_spaces = []
     for X in f_x_train:
-        _X = pca.transform(X)
-        if VERBOSE:
-            print(pca.explained_variance_ratio_)
-            print(pca.singular_values_)
+        _X = [pca_array[i].transform(X[i]) for i in range(len(f_x_train[0]))]
+        #if VERBOSE:
+        #    print(pca.explained_variance_ratio_)
+        #    print(pca.singular_values_)
         train_activation_spaces.append(_X)
 
     # Train a k-NN classifier for each activation space
