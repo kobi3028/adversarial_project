@@ -54,10 +54,10 @@ def main(train_dir_name, label_file_path, adv_dir_name):
 
     advertise_activation_spaces = []
     for X in x_adv:
-        _X = pca.transform(X)
-        if VERBOSE:
-            print(pca.explained_variance_ratio_)
-            print(pca.singular_values_)
+        _X = [pca_array[i].transform(X[i]) for i in range(len(x_adv[0]))]
+        # if VERBOSE:
+        #    print(pca.explained_variance_ratio_)
+        #    print(pca.singular_values_)
         advertise_activation_spaces.append(_X)
 
     Y_advertise_predict = []
