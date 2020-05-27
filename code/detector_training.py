@@ -87,17 +87,22 @@ def main(data_dir_name):
     # Calculate the cutoff log likelihood value. Choose an
     # appropriate threshold value by using a ROC curve
     fpr, tpr, thresholds = roc_curve(Y_true, ll_x_arr, pos_label=1)
+    roc_auc = auc(fpr, tpr)
     print(fpr)
     print(tpr)
     print(thresholds)
-    print(auc(fpr, tpr))
+    print(roc_auc)
 
     #plot ROC
-    plt.plot(fpr, tpr, color='darkorange', label='ROC curve')
+    lw = 2
+    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    plt.plot(fpr, tpr, color='darkorange', lw=lw, label='ROC curve (area = %0.3f)' % roc_auc)
     plt.xlim([-0.02, 1.02])
     plt.ylim([-0.02, 1.02])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic graph')
+    plt.legend(loc="lower right")
     plt.show()
 
 
