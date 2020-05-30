@@ -1,4 +1,4 @@
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA, IncrementalPCA
 from sklearn.neighbors import KNeighborsClassifier as KNN
 from sklearn.metrics import roc_curve, auc
 import matplotlib.pyplot as plt
@@ -12,17 +12,111 @@ from detector import *
 
 ADVERSARIAL = 1
 NORMAL = 0
-
+DUMP_FILE_EXT = '.pickle'
 
 class Detector:
 
-    DEFAULT_FILE_NAME = 'detector.pickle'
+    DEFAULT_FILE_NAME = 'detector'
 
     def __init__(self):
         self.pca_array = []
         self.knn_classefiers = []
         self.p_arr = []
         self.cutoff = 0
+        # fit process temp data
+        self.__benign_activation_spaces = []
+        self.__adversarial_activation_spaces = []
+
+    def partial_fit_activation_spaces(self, partial_benign_trainset):
+        if len(self.pca_array) == 0:
+            for i in range(len(partial_benign_trainset[0])):
+                i_pca = IncrementalPCA(n_components=100)
+                self.pca_array.append(i_pca)
+
+        for i in range(len(partial_benign_trainset[0])):
+            self.pca_array[i].partial_fit([x[i].flatten() for x in partial_benign_trainset])
+
+    def compute_benign(self, partial_benign_trainset):
+        for X in partial_benign_trainset:
+            _X = [self.pca_array[i].transform([X[i].flatten()])[0] for i in range(len(partial_benign_trainset[0]))]
+            self.__benign_activation_spaces.append(_X)
+
+    def compute_adversarial(self, partial_adversarial_trainset):
+        for X in partial_adversarial_trainset:
+            _X = [self.pca_array[i].transform([X[i].flatten()])[0] for i in range(len(partial_adversarial_trainset[0]))]
+            self.__adversarial_activation_spaces.append(_X)
+
+    def finish_fit(self, benign_labels, *, plot_roc_graph=False, roc_graph_file_name=''):
+        # Train a k-NN classifier for each activation space
+        for i in range(len(self.benign_activation_spaces[0])):
+            neigh = KNN(n_neighbors=5)
+            neigh.fit([x[i] for x in self.__benign_activation_spaces], benign_labels)
+            self.knn_classefiers.append(neigh)
+
+        # Assign input samples with a sequence of class labels
+        Y_train_predict = []
+        for x in self.__benign_activation_spaces:
+            Y_train_predict.append([self.knn_classefiers[i].predict([x[i]])[0] for i in range(len(x))])
+
+        # Calculate the a priori probability for a classification
+        # change at the i position of a sequence
+        sum_count_arr = [0] * (len(Y_train_predict[0]) - 1)
+        for i in range(len(Y_train_predict)):
+            count_arr = [0] * (len(Y_train_predict[0]) - 1)
+            for j in range(1, len(Y_train_predict[i])):
+                if Y_train_predict[i][j] != Y_train_predict[i][j - 1]:
+                    count_arr[j - 1] += 1
+            sum_count_arr = [(sum_count_arr[k] + count_arr[k]) for k in range(len(sum_count_arr))]
+
+        self.p_arr = [float(i) / (len(Y_train_predict) - 1) for i in sum_count_arr]
+
+        # Assign adversarial samples with a sequence of class labels
+        Y_adversarial_predict = []
+        for x in self.__adversarial_activation_spaces:
+            Y_adversarial_predict.append([self.knn_classefiers[i].predict([x[i]])[0] for i in range(len(x))])
+
+        # Calculate class switching Bayesian log likelihood
+        Y_true = [0] * len(Y_train_predict) + [1] * len(Y_adversarial_predict)
+        Y_arr = Y_train_predict + Y_adversarial_predict
+        ll_x_arr = [0] * len(Y_arr)
+        for i in range(len(Y_arr)):
+            for j in range(1, len(Y_arr[i])):
+                if Y_arr[i][j] != Y_arr[i][j - 1]:
+                    ll_x_arr[i] += math.log(self.p_arr[j - 1])
+                else:
+                    ll_x_arr[i] += math.log(1 - self.p_arr[j - 1])
+
+        # Calculate the cutoff log likelihood value. Choose an
+        # appropriate threshold value by using a ROC curve
+        fpr, tpr, thresholds = roc_curve(Y_true, ll_x_arr, pos_label=1)
+        roc_auc = auc(fpr, tpr)
+        # print(fpr)
+        # print(tpr)
+        # print(thresholds)
+        # print(roc_auc)
+
+        if plot_roc_graph or len(roc_graph_file_name) != 0:
+            # plot ROC
+            lw = 2
+            plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+            plt.plot(fpr, tpr, color='darkorange', lw=lw, label='ROC curve (area = %0.3f)' % roc_auc)
+            plt.xlim([-0.02, 1.02])
+            plt.ylim([-0.02, 1.02])
+            plt.xlabel('False Positive Rate')
+            plt.ylabel('True Positive Rate')
+            plt.title('Receiver Operating Characteristic graph')
+            plt.legend(loc="lower right")
+            if len(roc_graph_file_name) != 0:
+                plt.savefig(roc_graph_file_name)
+            if plot_roc_graph:
+                plt.show()
+
+        '''TODO: need to find a way to calc it from the ROC curve'''
+        self.cutoff = 10
+
+        # cleanup
+        #del self.__adversarial_activation_spaces
+        #del self.__benign_activation_spaces
 
     def fit(self, benign_trainset, adv_trainset, benign_labels, *, plot_roc_graph=False, roc_graph_file_name=''):
         # Compute Euclidian activation spaces for each layer
@@ -34,20 +128,20 @@ class Detector:
             #    print(pca.singular_values_)
             self.pca_array.append(pca)
 
-        train_activation_spaces = []
+        self.benign_activation_spaces = []
         for X in benign_trainset:
             _X = [self.pca_array[i].transform([X[i].flatten()])[0] for i in range(len(benign_trainset[0]))]
-            train_activation_spaces.append(_X)
+            self.benign_activation_spaces.append(_X)
 
         # Train a k-NN classifier for each activation space
-        for i in range(len(train_activation_spaces[0])):
+        for i in range(len(self.benign_activation_spaces[0])):
             neigh = KNN(n_neighbors=5)
-            neigh.fit([x[i] for x in train_activation_spaces], benign_labels)
+            neigh.fit([x[i] for x in self.benign_activation_spaces], benign_labels)
             self.knn_classefiers.append(neigh)
 
         # Assign input samples with a sequence of class labels
         Y_train_predict = []
-        for x in train_activation_spaces:
+        for x in self.benign_activation_spaces:
             Y_train_predict.append([self.knn_classefiers[i].predict([x[i]])[0] for i in range(len(x))])
 
         # Calculate the a priori probability for a classification
@@ -63,13 +157,13 @@ class Detector:
         self.p_arr = [float(i) / (len(Y_train_predict) - 1) for i in sum_count_arr]
 
         # Construct adversarial examples (input files)
-        advertise_activation_spaces = []
+        self.adversarial_activation_spaces = []
         for X in adv_trainset:
             _X = [self.pca_array[i].transform([X[i].flatten()])[0] for i in range(len(adv_trainset[0]))]
-            advertise_activation_spaces.append(_X)
+            self.adversarial_activation_spaces.append(_X)
 
         Y_advertise_predict = []
-        for x in advertise_activation_spaces:
+        for x in self.adversarial_activation_spaces:
             Y_advertise_predict.append([self.knn_classefiers[i].predict([x[i]])[0] for i in range(len(x))])
 
         # Calculate class switching Bayesian log likelihood
@@ -136,7 +230,7 @@ class Detector:
         return [self.predict(sample) for sample in sample_arr]
 
     def dump(self, data_dir_name, file_name):
-        with open(os.path.join(data_dir_name, file_name), 'wb') as f:
+        with open(os.path.join(data_dir_name, file_name + DUMP_FILE_EXT), 'wb') as f:
             pickle.dump(self, f)
 
     def load(self, data_dir_name, file_name):

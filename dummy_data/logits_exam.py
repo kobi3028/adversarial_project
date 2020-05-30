@@ -4,10 +4,11 @@ import shutil
 import os
 
 #creates logits examples
-number_of_examples = 20
-number_of_layers = 18
-layer_length = 256
-layer_width = 256
+number_of_examples = 256 # 8313
+every_part = 256
+number_of_layers = 64
+layer_length = 32
+layer_width = 32
 lowest_y_value = 0
 highest_y_value = 9
 
