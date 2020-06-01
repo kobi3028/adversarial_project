@@ -18,7 +18,7 @@ class Detector:
 
     DEFAULT_FILE_NAME = 'detector'
 
-    def __init__(self):
+    def __init__(self, layers_number, samples_number):
         self.pca_array = []
         self.knn_classefiers = []
         self.p_arr = []
@@ -26,29 +26,33 @@ class Detector:
         # fit process temp data
         self.__benign_activation_spaces = []
         self.__adversarial_activation_spaces = []
+        for i in range(samples_number):
+            self.__benign_activation_spaces.append([])
+            self.__adversarial_activation_spaces.append([])
+            for j in range(layers_number):
+                self.__benign_activation_spaces[i].append([])
+                self.__adversarial_activation_spaces[i].append([])
 
-    def partial_fit_activation_spaces(self, partial_benign_trainset):
-        if len(self.pca_array) == 0:
-            for i in range(len(partial_benign_trainset[0])):
-                i_pca = IncrementalPCA(n_components=100)
-                self.pca_array.append(i_pca)
+        self.pca_array = [None] * layers_number
 
-        for i in range(len(partial_benign_trainset[0])):
-            self.pca_array[i].partial_fit([x[i].flatten() for x in partial_benign_trainset])
+    def partial_fit_activation_spaces(self, layer, partial_benign_trainset):
+        if self.pca_array[layer] is None:
+            n_components = min(100, len(partial_benign_trainset[0].flatten()))
+            i_pca = IncrementalPCA(n_components=n_components, batch_size=n_components)
+            self.pca_array[layer] = i_pca
+        self.pca_array[layer].partial_fit([x.flatten() for x in partial_benign_trainset])
 
-    def compute_benign(self, partial_benign_trainset):
-        for X in partial_benign_trainset:
-            _X = [self.pca_array[i].transform([X[i].flatten()])[0] for i in range(len(partial_benign_trainset[0]))]
-            self.__benign_activation_spaces.append(_X)
+    def compute_benign(self, layer, batch_start, partial_benign_trainset):
+        for i in range(len(partial_benign_trainset)):
+            self.__benign_activation_spaces[i+batch_start][layer] = self.pca_array[layer].transform([partial_benign_trainset[i].flatten()])[0]
 
-    def compute_adversarial(self, partial_adversarial_trainset):
-        for X in partial_adversarial_trainset:
-            _X = [self.pca_array[i].transform([X[i].flatten()])[0] for i in range(len(partial_adversarial_trainset[0]))]
-            self.__adversarial_activation_spaces.append(_X)
+    def compute_adversarial(self, layer, batch_start, partial_adversarial_trainset):
+        for i in range(len(partial_adversarial_trainset)):
+            self.__adversarial_activation_spaces[i+batch_start][layer] = self.pca_array[layer].transform([partial_adversarial_trainset[i].flatten()])[0]
 
     def finish_fit(self, benign_labels, *, plot_roc_graph=False, roc_graph_file_name=''):
         # Train a k-NN classifier for each activation space
-        for i in range(len(self.benign_activation_spaces[0])):
+        for i in range(len(self.__benign_activation_spaces[0])):
             neigh = KNN(n_neighbors=5)
             neigh.fit([x[i] for x in self.__benign_activation_spaces], benign_labels)
             self.knn_classefiers.append(neigh)
@@ -68,8 +72,8 @@ class Detector:
                     count_arr[j - 1] += 1
             sum_count_arr = [(sum_count_arr[k] + count_arr[k]) for k in range(len(sum_count_arr))]
 
-        self.p_arr = [float(i) / (len(Y_train_predict) - 1) for i in sum_count_arr]
-
+        self.p_arr = [(1e-38 + (float(i)/(len(Y_train_predict) - 1))) for i in sum_count_arr]
+        print(self.p_arr)
         # Assign adversarial samples with a sequence of class labels
         Y_adversarial_predict = []
         for x in self.__adversarial_activation_spaces:
