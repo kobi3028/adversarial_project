@@ -13,6 +13,7 @@ from detector import *
 ADVERSARIAL = 1
 NORMAL = 0
 DUMP_FILE_EXT = '.pickle'
+STRIVES_FOR_ZERO = float(1e-323)
 
 class Detector:
 
@@ -72,7 +73,7 @@ class Detector:
                     count_arr[j - 1] += 1
             sum_count_arr = [(sum_count_arr[k] + count_arr[k]) for k in range(len(sum_count_arr))]
 
-        self.p_arr = [(1e-38 + (float(i)/(len(Y_train_predict) - 1))) for i in sum_count_arr]
+        self.p_arr = [(STRIVES_FOR_ZERO + (float(i)/(len(Y_train_predict) - 1))) for i in sum_count_arr]
         print(self.p_arr)
         # Assign adversarial samples with a sequence of class labels
         Y_adversarial_predict = []
