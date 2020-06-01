@@ -226,10 +226,11 @@ class Detector:
             else:
                 ll_x += math.log(1 - self.p_arr[i - 1])
 
+        return ll_x
         # Compare log likelihood against the cutoff value
-        if ll_x < self.cutoff:
-            return ADVERSARIAL
-        return NORMAL
+        #if ll_x < self.cutoff:
+        #    return ADVERSARIAL
+        #return NORMAL
 
     def predict_range(self, sample_arr):
         return [self.predict(sample) for sample in sample_arr]
