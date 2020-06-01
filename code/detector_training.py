@@ -6,7 +6,7 @@ import time
 VERBOSE = True
 EXT = '.npy'
 
-LAYER = 21
+LAYER = 9 #21
 PARTS = 17
 SAMPLES = 8313
 

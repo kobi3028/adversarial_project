@@ -39,7 +39,7 @@ class Detector:
     def partial_fit_activation_spaces(self, layer, partial_benign_trainset):
         if self.pca_array[layer] is None:
             n_components = min(100, len(partial_benign_trainset[0].flatten()))
-            i_pca = IncrementalPCA(n_components=n_components, batch_size=n_components)
+            i_pca = IncrementalPCA(n_components=n_components, batch_size=n_components//10)
             self.pca_array[layer] = i_pca
         self.pca_array[layer].partial_fit([x.flatten() for x in partial_benign_trainset])
 
@@ -93,7 +93,7 @@ class Detector:
 
         # Calculate the cutoff log likelihood value. Choose an
         # appropriate threshold value by using a ROC curve
-        fpr, tpr, thresholds = roc_curve(Y_true, ll_x_arr, pos_label=1)
+        fpr, tpr, thresholds = roc_curve(Y_true, ll_x_arr, pos_label=0)
         roc_auc = auc(fpr, tpr)
         # print(fpr)
         # print(tpr)
