@@ -120,8 +120,8 @@ class Detector:
         self.cutoff = 10
 
         # cleanup
-        #del self.__adversarial_activation_spaces
-        #del self.__benign_activation_spaces
+        # del self.__adversarial_activation_spaces
+        # del self.__benign_activation_spaces
 
     def fit(self, benign_trainset, adv_trainset, benign_labels, *, plot_roc_graph=False, roc_graph_file_name=''):
         # Compute Euclidian activation spaces for each layer
@@ -228,9 +228,9 @@ class Detector:
 
         return ll_x
         # Compare log likelihood against the cutoff value
-        #if ll_x < self.cutoff:
+        # if ll_x < self.cutoff:
         #    return ADVERSARIAL
-        #return NORMAL
+        # return NORMAL
 
     def predict_range(self, sample_arr):
         return [self.predict(sample) for sample in sample_arr]

@@ -18,6 +18,7 @@ ALL_SAMPLES = 8313
 def main(data_dir_name, roc_graph_file_name):
 
     start = time.time()
+    print('[{:11.2f}s][+] train samples:{}\ttest samples:{}'.format(time.time() - start, TRAIN_SAMPLES, TEST_SAMPLES))
     random.seed(os.urandom(5))
     all_indexes = [i for i in range(ALL_SAMPLES)]
     random.shuffle(all_indexes)
@@ -89,6 +90,8 @@ def main(data_dir_name, roc_graph_file_name):
     x_labels = [x_labels[i] for i in range(len(x_labels)) if i in train_indexes]
     m_detector.finish_fit(x_labels)
 
+    print('[{:11.2f}s][+] model training: Done'.format(time.time() - start))
+
     graph_dir_path = os.path.join(data_dir_name, 'roc_graphs')
     if not os.path.isdir(graph_dir_path):
         os.mkdir(graph_dir_path)
@@ -98,7 +101,8 @@ def main(data_dir_name, roc_graph_file_name):
         roc_graph_file_name = '{}_{}.{}'.format(tmp[0], len(os.listdir(graph_dir_path)) + 1, tmp[1])
 
     Y_score = [m_detector.predict(test_data_benign[key]) for key in test_data_benign] + [m_detector.predict(test_data_benign[key]) for key in test_data_adversrial]
-    Y_true = [0] * len(test_data_benign) + [1] * len(test_data_adversrial)
+    print(Y_score)
+    Y_true = ([0] * len(test_data_benign)) + ([1] * len(test_data_adversrial))
 
     fpr, tpr, thresholds = roc_curve(Y_true, Y_score, pos_label=0)
     roc_auc = auc(fpr, tpr)
