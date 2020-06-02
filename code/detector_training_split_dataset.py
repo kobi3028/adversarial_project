@@ -88,7 +88,7 @@ def main(data_dir_name, roc_graph_file_name):
 
     x_labels = np.load(os.path.join(data_dir_name, 'labels_benign' + EXT))
     x_labels = [x_labels[i] for i in range(len(x_labels)) if i in train_indexes]
-    m_detector.finish_fit(x_labels)
+    m_detector.finish_fit(x_labels, plot_roc_graph=True)
 
     print('[{:11.2f}s][+] model training: Done'.format(time.time() - start))
 
@@ -100,7 +100,7 @@ def main(data_dir_name, roc_graph_file_name):
         tmp = roc_graph_file_name.split('.')
         roc_graph_file_name = '{}_{}.{}'.format(tmp[0], len(os.listdir(graph_dir_path)) + 1, tmp[1])
 
-    Y_score = [m_detector.predict(test_data_benign[key]) for key in test_data_benign] + [m_detector.predict(test_data_benign[key]) for key in test_data_adversrial]
+    Y_score = [m_detector.predict(test_data_benign[key]) for key in test_data_benign] + [m_detector.predict(test_data_adversrial[key]) for key in test_data_adversrial]
     print(Y_score)
     Y_true = ([0] * len(test_data_benign)) + ([1] * len(test_data_adversrial))
 
