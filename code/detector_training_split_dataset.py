@@ -3,6 +3,9 @@ import os
 from detector import *
 import time
 import random
+from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import f1_score
+from sklearn.metrics import auc
 
 
 VERBOSE = True
@@ -15,7 +18,7 @@ TEST_SAMPLES = 8313 - TRAIN_SAMPLES
 ALL_SAMPLES = 8313
 
 
-def main(data_dir_name, roc_graph_file_name):
+def main(data_dir_name, roc_graph_file_name, precision_recall_graph_file_name):
 
     start = time.time()
     print('[{:11.2f}s][+] train samples:{}\ttest samples:{}'.format(time.time() - start, TRAIN_SAMPLES, TEST_SAMPLES))
@@ -104,6 +107,23 @@ def main(data_dir_name, roc_graph_file_name):
     print(Y_score)
     Y_true = ([0] * len(test_data_benign)) + ([1] * len(test_data_adversrial))
 
+    lr_precision, lr_recall, _ = precision_recall_curve(Y_true, Y_score, pos_label=1)
+    precision_recall_auc = auc(lr_recall, lr_precision)
+
+    lw = 2
+    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    plt.plot(lr_recall, lr_precision, color='darkorange', lw=lw, label='precision recall curve (area = %0.3f)' % precision_recall_auc)
+    plt.xlim([-0.02, 1.02])
+    plt.ylim([-0.02, 1.02])
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.title('Precision Recall graph')
+    plt.legend(loc="lower right")
+
+    plt.savefig(os.path.join(graph_dir_path, precision_recall_graph_file_name))
+    plt.show(block=True)
+    plt.clf()
+
     fpr, tpr, thresholds = roc_curve(Y_true, Y_score, pos_label=1)
     roc_auc = auc(fpr, tpr)
 
@@ -118,7 +138,8 @@ def main(data_dir_name, roc_graph_file_name):
     plt.legend(loc="lower right")
 
     plt.savefig(os.path.join(graph_dir_path, roc_graph_file_name))
-    plt.show()
+    plt.show(block=True)
+    plt.clf()
 
     m_detector.dump(data_dir_name, Detector.DEFAULT_FILE_NAME)
     # m_detector.load(data_dir_name, Detector.DEFAULT_FILE_NAME)
@@ -129,6 +150,6 @@ if __name__ == '__main__':
         print('Usage: detector_training.py <DIR_NAME>')
         exit()
     dir_name = sys.argv[1]
-    main(dir_name, 'roc_graph_test.png')
+    main(dir_name, 'roc_graph_test.png', 'precision_recall_graph_test.png')
 
 
