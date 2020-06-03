@@ -86,12 +86,6 @@ def main(data_dir_name, roc_graph_file_name):
         tmp = roc_graph_file_name.split('.')
         roc_graph_file_name = '{}_{}.{}'.format(tmp[0], len(os.listdir(graph_dir_path))+1, tmp[1])
 
-    x_labels = np.load(os.path.join(data_dir_name, 'labels_benign' + EXT))
-    x_labels = [x_labels[i] for i in range(len(x_labels)) if i in train_indexes]
-    m_detector.finish_fit(x_labels, plot_roc_graph=True)
-
-    print('[{:11.2f}s][+] model training: Done'.format(time.time() - start))
-
     graph_dir_path = os.path.join(data_dir_name, 'roc_graphs')
     if not os.path.isdir(graph_dir_path):
         os.mkdir(graph_dir_path)
@@ -100,11 +94,17 @@ def main(data_dir_name, roc_graph_file_name):
         tmp = roc_graph_file_name.split('.')
         roc_graph_file_name = '{}_{}.{}'.format(tmp[0], len(os.listdir(graph_dir_path)) + 1, tmp[1])
 
-    Y_score = [m_detector.predict(test_data_benign[key]) for key in test_data_benign] + [m_detector.predict(test_data_adversrial[key]) for key in test_data_adversrial]
+    x_labels = np.load(os.path.join(data_dir_name, 'labels_benign' + EXT))
+    x_labels = [x_labels[i] for i in range(len(x_labels)) if i in train_indexes]
+    m_detector.finish_fit(x_labels)
+
+    print('[{:11.2f}s][+] model training: Done'.format(time.time() - start))
+
+    Y_score = [abs(m_detector.predict(test_data_benign[key])) for key in test_data_benign] + [abs(m_detector.predict(test_data_adversrial[key])) for key in test_data_adversrial]
     print(Y_score)
     Y_true = ([0] * len(test_data_benign)) + ([1] * len(test_data_adversrial))
 
-    fpr, tpr, thresholds = roc_curve(Y_true, Y_score, pos_label=0)
+    fpr, tpr, thresholds = roc_curve(Y_true, Y_score, pos_label=1)
     roc_auc = auc(fpr, tpr)
 
     lw = 2
@@ -117,7 +117,7 @@ def main(data_dir_name, roc_graph_file_name):
     plt.title('Receiver Operating Characteristic graph')
     plt.legend(loc="lower right")
 
-    plt.savefig(roc_graph_file_name)
+    plt.savefig(os.path.join(graph_dir_path, roc_graph_file_name))
     plt.show()
 
     m_detector.dump(data_dir_name, Detector.DEFAULT_FILE_NAME)
@@ -129,6 +129,6 @@ if __name__ == '__main__':
         print('Usage: detector_training.py <DIR_NAME>')
         exit()
     dir_name = sys.argv[1]
-    main(dir_name, 'roc_graph.png')
+    main(dir_name, 'roc_graph_test.png')
 
 
