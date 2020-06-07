@@ -7,7 +7,6 @@ import sys
 import math
 import os
 import pickle
-from detector import *
 
 
 ADVERSARIAL = 1
