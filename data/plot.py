@@ -6,9 +6,15 @@ import os
 
 
 def main(data_dir_name, roc_graph_file_name, precision_recall_graph_file_name, histogram_file_name):
-    Y_score = np.load(os.path.join(data_dir_name, 'prediction.npy'))
+    Y_score = np.load(os.path.join(data_dir_name, 'prediction_pca_knn.npy'))
     Y_score_benign = Y_score[:832]
     Y_score_adv = Y_score[832:]
+
+    #Y_score_adv = np.load(os.path.join(data_dir_name, 'test_adv_sigmoid.npy'))
+    #Y_score_adv = np.absolute(Y_score_adv)
+    #Y_score_benign = np.load(os.path.join(data_dir_name, 'test_benign_sigmoid.npy'))
+    #Y_score_benign = np.absolute(Y_score_benign)
+    #Y_score = Y_score_benign.tolist() + Y_score_adv.tolist()
     Y_true = ([0] * len(Y_score_benign)) + ([1] * len(Y_score_adv))
 
     lw = 2
@@ -47,6 +53,9 @@ def main(data_dir_name, roc_graph_file_name, precision_recall_graph_file_name, h
     plt.clf()
 
     #plt.figure(figsize=(50, 50))
+    plt.xlabel('test sample #')
+    plt.ylabel('likelihood value')
+    plt.title('test samples likelihood value')
     plt.axvline(x=832, linewidth=lw, color='r', linestyle='--')
     plt.bar(np.arange(len(Y_score_benign)), Y_score_benign, color='navy', label='benign', align='edge')
     plt.bar(np.arange(len(Y_score_adv)) + len(Y_score_benign), Y_score_adv, color='darkorange', label='adversarial',
@@ -57,8 +66,4 @@ def main(data_dir_name, roc_graph_file_name, precision_recall_graph_file_name, h
     plt.clf()
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        #print('Usage: detector_training.py <DIR_NAME>')
-        exit()
-    dir_name = sys.argv[1]
     main('./', 'roc_graph_test.png', 'precision_recall_graph_test.png', 'prediction_score_histogram.png')
