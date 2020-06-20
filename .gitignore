@@ -1,3 +1,5 @@
 dummy_data/data/
 data/adv/
 data/benign/
+
+*.pyc
