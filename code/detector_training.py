@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from detector import *
+from Detector_PCA_MLP import *
 import time
 
 VERBOSE = True
@@ -12,7 +12,7 @@ SAMPLES = 8313
 
 def main(data_dir_name, plot_roc_graph, roc_graph_file_name):
     start = time.time()
-    m_detector = Detector(LAYER, SAMPLES)
+    m_detector = Detector_PCA_MLP(LAYER, SAMPLES)
 
     # input handling
 

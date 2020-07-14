@@ -6,15 +6,15 @@ import os
 
 
 def main(data_dir_name, roc_graph_file_name, precision_recall_graph_file_name, histogram_file_name):
-    #Y_score = np.load(os.path.join(data_dir_name, 'prediction_pca_knn.npy'))
-    #Y_score_benign = Y_score[:832]
-    #Y_score_adv = Y_score[832:]
+    Y_score = np.load(os.path.join(data_dir_name, 'prediction.npy'))
+    Y_score_benign = Y_score[:832]
+    Y_score_adv = Y_score[832:]
 
-    Y_score_adv = np.load(os.path.join(data_dir_name, 'test_adv_tanh.npy'))
-    Y_score_adv = np.absolute(Y_score_adv)
-    Y_score_benign = np.load(os.path.join(data_dir_name, 'test_benign_tanh.npy'))
-    Y_score_benign = np.absolute(Y_score_benign)
-    Y_score = Y_score_benign.tolist() + Y_score_adv.tolist()
+    #Y_score_adv = np.load(os.path.join(data_dir_name, 'test_adv_tanh.npy'))
+    #Y_score_adv = np.absolute(Y_score_adv)
+    #Y_score_benign = np.load(os.path.join(data_dir_name, 'test_benign_tanh.npy'))
+    #Y_score_benign = np.absolute(Y_score_benign)
+    #Y_score = Y_score_benign.tolist() + Y_score_adv.tolist()
     Y_true = ([0] * len(Y_score_benign)) + ([1] * len(Y_score_adv))
 
     lw = 2

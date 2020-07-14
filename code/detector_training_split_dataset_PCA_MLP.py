@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from detector_PCA_KNN import *
+from Detector_PCA_MLP import *
 import time
 import random
 from sklearn.metrics import precision_recall_curve
@@ -12,8 +12,8 @@ VERBOSE = True
 EXT = '.npy'
 
 LAYER = 21
-PARTS = 20
-SAMPLES = 10212
+PARTS = 17
+SAMPLES = 8313
 TRAIN_SAMPLES = int(SAMPLES * 0.9)
 TEST_SAMPLES = SAMPLES - TRAIN_SAMPLES
 ALL_SAMPLES = SAMPLES
@@ -29,7 +29,6 @@ def main(data_dir_name, roc_graph_file_name, precision_recall_graph_file_name):
 
     print('[{:11.2f}s][+] number of samples:{}'.format(time.time() - start, count))
     print('[{:11.2f}s][+] train samples:{}\ttest samples:{}'.format(time.time() - start, TRAIN_SAMPLES, TEST_SAMPLES))
-    count = 0
     random.seed(1337)
     all_indexes = [i for i in range(ALL_SAMPLES)]
     random.shuffle(all_indexes)
@@ -37,7 +36,7 @@ def main(data_dir_name, roc_graph_file_name, precision_recall_graph_file_name):
     test_indexes = all_indexes[TRAIN_SAMPLES:]
     # input handling
 
-    m_detector = Detector(LAYER, len(train_indexes))
+    m_detector = Detector_PCA_MLP(LAYER, len(train_indexes))
 
     test_data_benign = {i:[[] for j in range(LAYER)] for i in test_indexes}
     test_data_adversrial = {i:[[] for j in range(LAYER)] for i in test_indexes}
@@ -160,7 +159,7 @@ def main(data_dir_name, roc_graph_file_name, precision_recall_graph_file_name):
     #plt.show(block=True)
     plt.clf()
 
-    m_detector.dump(data_dir_name, Detector.DEFAULT_FILE_NAME)
+    m_detector.dump(data_dir_name, Detector_PCA_MLP.DEFAULT_FILE_NAME)
     # m_detector.load(data_dir_name, Detector.DEFAULT_FILE_NAME)
 
 
